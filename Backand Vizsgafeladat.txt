@@ -1,0 +1,426 @@
+Backend Vizsgafeladat Sallai GoogleClasscroomban amit fell rakott
+következő adatokat kell tárolnia
+https://szit.hu/doku.php?id=oktatas:programozas:csharp:dotnetcore:web_api:gyors_rest_api
+ web • rest_api_azonositas • java_rest_api_kliens • httpclient_pelda • oktatas • programozas • csharp • dotnetcore • web_api • gyors_rest_api
+
+az
+rendszám
+márka
+ár
+
+C#-ban
+
+dotnet nevű parancs parancsorban 
+dotnet --version
+7.0.400
+
+dotNetCore/kezdés/ Letöltése dotnet.microsoft.com6  (szit.hu-n WebAPi( Rest api Backand)-Gyors Rest API
+
+Visual Studio Code-ban 
+
+Mappa beírod a nevet 
+cmd 
+
+KEZDÉS
+
+Megnyítod a az elnevezett mappát Visual Studio  Code-ban 
+
+Terminálba ez beírod, aztán bezárod majd újból megnyítod
+1.
+dotnet new webapi --name  jarmu - itt a végen (jarmu volt) azt adod meg amit megadnak nevet  de marad a --name!) Nagyon fontos, hogy kis betűvel írd!
+
+
+EntityFrameworkCore-ra van szükség azt kell telepíteni
+
+nekük a 7-es kell!!
+A terminálba ezt így ahogy van beírod és enter, nem kell semmit megváltoztatni rajta!
+
+2.
+dotnet add package Microsoft.EntityFrameworkCore --version 7.0.15
+
+
+3.
+A WeatherForecast.cs katt
+
+ez lesz alapból és átírod
+namespace jarmu;
+
+public class WeatherForecast
+{
+    public int Id { get; set; }
+
+    public int TemperatureC { get; set; }
+
+    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+
+    public string? Summary { get; set; }
+}
+
+erre írtuk át
+
+namespace jarmu;
+
+public class Jarmu
+{
+    public int Id { get; set; }
+
+    public string? Rendszam { get; set; }
+
+    public string? Marka { get; set; }
+
+
+    public double Ar { get; set; }
+}
+
+
+
+(Amit csináltál házi a fentivel kezdted ami a rövidebb volt
+
+
+using kolcsonzesek;
+
+namespace kolcsonzok;
+
+public class Kolcsonzok
+{
+    public int id { get; set; }
+
+    public string? nev { get; set; }
+
+    public DateTime? szulIdo { get; set; }
+
+    public List<Kolcsonzesek> kolcsonzesek { get; set; }
+
+
+   
+}
+)
+
+Miútán át írtad el kell menteni!
+
+
+Csak simán nevezd át
+(- ez nem kell Felül File
+Save As katt
+bírod Jarmu.cs ( Itt nagy betűvel írod)
+
+
+4.
+Aztán amikor megcsinálod a másikat is szintén létrehozod.
+A feladat alapján két külön osztályt kell létrehozni külön fájlokban. 
+
+First.
+Például:
+Kolcsonzok
+
+
+
+
+Second.
+Vagy Például
+Kolcsonzesek
+
+namespace kolcsonzesek
+{
+    public class Kolcsonzesek
+    {
+         public int id { get; set; }
+        public int kolcsonzokId { get; set; }
+        public string iro { get; set; }
+        public string? mufaj { get; set; }
+        public string? cim { get; set; }
+    }
+}
+
+
+
+5
+gyökér katt new folder katt
+database
+new file katt és beírod
+create.sql
+
+A create.sql-ben ez lesz például
+
+(reate database jarmu;
+
+use jarmu;
+
+create table Jarmuvek(
+    Id int not null primary key auto_increment,
+    Rendszam varchar(50),
+    Marka varchar(50),
+    Ar double
+);
+)
+
+
+
+6.
+Terminálba beírod
+
+dotnet add package Pomelo.EntityFrameworkCore.MySql --version 7.0.0
+
+
+
+
+7.
+
+Létrehozod DataService.cs-t
+
+Properties katt 
+new file katt és beírod
+DataService.cs 
+
+Ez lesz benne csak átírod
+
+using Microsoft.EntityFrameworkCore;
+namespace jarmu;
+public class DataService: DbContext {
+    public DataService(DbContextOptions<DataService> options)
+        :base(options) {}
+ 
+    public DbSet<Jarmu> Jarmuvek {get; set;} = null!;
+}
+
+
+
+
+
+8.
+
+Felül Controllers
+file save as
+JarmuControllers.cs (  nevezed el a feladat alapján ehhez hasonlóan csináld meg)
+
+Ez megy bele csak változtasd meg!
+
+
+
+
+using Microsoft.AspNetCore.Mvc;
+using jarmu;
+
+namespace jarmu.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class JarmuController : ControllerBase
+{
+
+    private readonly DataService _db;
+    public JarmuController(DataService db)
+    {
+        _db = db;
+    }
+
+    [HttpGet(Name = "GetJarmu")]
+    public IEnumerable<Jarmu> Get()
+    {
+        return _db.Jarmuvek.ToArray();
+    }
+
+    [HttpPost]
+    public Jarmu Post(Jarmu jarmu) {
+        _db.Jarmuvek.Add(jarmu);
+        _db.SaveChanges();
+        var res = _db.Jarmuvek.Single(e => e.Id == jarmu.Id);
+        return res;
+    }
+
+    [HttpPut("{id}")]
+    public Jarmu Put(long id, Jarmu jarmu) {
+        var act = _db.Jarmuvek.Find(id);
+        if(act == null) { return jarmu; }
+        act.Rendszam = jarmu.Rendszam;
+        act.Marka = jarmu.Marka;
+        act.Ar = jarmu.Ar;
+        _db.SaveChanges();
+        var res = _db.Jarmuvek.Single(e => e.Id == id);
+        return res;
+    }
+
+    [HttpDelete("{id}")]
+    public int Delete(long id) {
+        var act = _db.Jarmuvek.Find(id);
+        if(act == null) { return 0; }
+        _db.Jarmuvek.Remove(act);
+        var affectedRecords = _db.SaveChanges();
+        return affectedRecords;
+    }    
+
+}
+
+
+
+
+9.
+
+Ami lesz a neve a feladatnak arra kattintasz 
+Például:
+A jarmu.cs-be pedig ez megy!
+
+
+
+    namespace jarmu;
+
+    public class Jarmu
+    {
+        public int Id { get; set; }
+        public string? Rendszam { get; set; }
+        public string? Marka { get; set; }
+        public double Ar { get; set; }
+    }
+}
+
+
+
+
+10.
+
+Properties katt 
+
+app.settings.Development.json  katt 
+
+
+Így kell kinézzen 
+
+
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "ConnectionStrings": {
+    "Mariadb": "server=localhost;user=root;password=;database=jarmu"
+  }  
+}
+
+
+
+11.
+
+
+Program.cs katt
+
+Ez így kell kinézzen csak változtasd meg
+
+
+
+using Microsoft.EntityFrameworkCore;
+using jarmu;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
+
+builder.Services.AddControllers();
+// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+//Adatábzis beállítása
+builder.Services.AddDbContext<DataService>(options => {
+    var connectionString = builder.Configuration.GetConnectionString("Mariadb");
+    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+});
+
+//Cors beállítása
+var origin = "*";
+builder.Services.AddCors(options => {
+    options.AddPolicy(name: origin,
+    policy => {
+        policy
+        .AllowAnyMethod()
+        .AllowAnyHeader()
+        .WithOrigins("http://localhost:4200");
+    });
+});
+
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.UseCors(origin);
+
+app.UseHttpsRedirection();
+
+app.UseAuthorization();
+
+app.MapControllers();
+
+app.Run();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Terminálba beírod
+
+
+dotnet watch
+
+Ez a  projectnek az elídítása( itt felúgrik a http://localhost:5206/swagger/index.html)
+
+
+HTTPIE
+
+http --version
+
+httpie   > http
+http localhost: 5012/emloyee ?
+
+
+Adatbázishóz kötés
+
+XAAMP elindítása
+start
+start
+
+phpmyadmin-ban
+SQL katt
+
+create database jarmu;
+indítás
+
+sql katt ismét
+
+use jarmu;
+
+create table Jarmuvek(
+    Id int not null primary key auto_increment,
+    Rendszam varchar(50),
+    Marka varchar(50),
+    Ar double
+);
+
+
+Beszúrás katt
+
+Érték
+
+Megadod Rendszam beírod amit gondolsz 
+Márka beírod amit gondolsz 
+ÁR beírod amit gondolsz indítás
+
+
+
